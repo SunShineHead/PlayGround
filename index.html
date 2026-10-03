@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sentinel — Personal Account Guard Bot</title>
+<style>
+  :root{
+    --bg:#0b0f17; --panel:#131a28; --panel2:#0f1522; --line:#223052;
+    --txt:#e8eefc; --mut:#8ea0c2; --acc:#5b8cff; --acc2:#37d99a; --warn:#ff5d5d;
+    --amber:#ffb224; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:radial-gradient(1200px 600px at 20% -10%,#1b2a52 0%,transparent 60%),radial-gradient(900px 500px at 110% 10%,#123b33 0%,transparent 55%),var(--bg);color:var(--txt);min-height:100vh}
+  header{max-width:980px;margin:0 auto;padding:28px 20px 8px;display:flex;gap:14px;align-items:center}
+  .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--acc),#9b6bff);display:grid;place-items:center;font-size:22px;box-shadow:0 8px 30px rgba(91,140,255,.35)}
+  h1{font-size:20px;margin:0} h1 small{display:block;font-weight:500;color:var(--mut);font-size:12.5px;margin-top:2px}
+  .badge{margin-left:auto;font-size:12px;color:#c9f5e3;background:rgba(55,217,154,.12);border:1px solid rgba(55,217,154,.35);padding:6px 10px;border-radius:999px;white-space:nowrap}
+  main{max-width:980px;margin:0 auto;padding:14px 20px 60px;display:grid;gap:16px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01)),var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .card h2{margin:0 0 8px;font-size:15px;letter-spacing:.02em}
+  .card p.desc{margin:0 0 12px;color:var(--mut);font-size:13.5px;line-height:1.55}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  input,textarea,select{width:100%;background:#0a0f1c;border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:11px 12px;font-size:14px;outline:none}
+  input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(91,140,255,.2)}
+  textarea{min-height:76px;resize:vertical}
+  label{font-size:12.5px;color:var(--mut);display:block;margin:10px 0 6px}
+  button{background:linear-gradient(180deg,#6d9bff,#4a73f5);border:0;color:#fff;font-weight:650;font-size:14px;padding:11px 15px;border-radius:10px;cursor:pointer}
+  button:hover{filter:brightness(1.07)} button:disabled{opacity:.5;cursor:not-allowed}
+  button.ghost{background:#0a0f1c;border:1px solid var(--line);color:var(--txt)}
+  button.danger{background:linear-gradient(180deg,#ff7a7a,#e33e3e)}
+  button.ok{background:linear-gradient(180deg,#43dfa0,#1fae76)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .tabs button{flex:1;min-width:110px}
+  .tabs button.active{outline:2px solid rgba(91,140,255,.55)}
+  .stat{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+  @media(max-width:640px){.stat{grid-template-columns:1fr 1fr}}
+  .stat div{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}
+  .stat b{font-size:18px;display:block} .stat span{font-size:11.5px;color:var(--mut)}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:99px;margin-right:6px}
+  .on{background:var(--acc2);box-shadow:0 0 8px var(--acc2)} .off{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+  #lockScreen{max-width:480px;margin:6vh auto 0}
+  .hidden{display:none!important}
+  .chatlog{display:flex;flex-direction:column;gap:10px;max-height:380px;overflow:auto;margin:12px 0;padding:4px}
+  .msg{padding:11px 13px;border-radius:12px;font-size:14px;line-height:1.55;max-width:92%}
+  .msg.q{align-self:flex-end;background:rgba(91,140,255,.18);border:1px solid rgba(91,140,255,.4)}
+  .msg.a{align-self:flex-start;background:#0a0f1c;border:1px solid var(--line)}
+  .msg.a b{color:var(--acc2)}
+  .kbd{font-size:11px;color:var(--mut)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--mut);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em}
+  .pill{font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+  .pill.bad{color:#ffb3b3;border-color:rgba(255,93,93,.4)} .pill.good{color:#b7f4da;border-color:rgba(55,217,154,.4)}
+  footer{max-width:980px;margin:0 auto;padding:0 20px 30px;color:var(--mut);font-size:12px}
+  a{color:var(--acc)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🛡️</div>
+  <h1>Sentinel — Personal Guard Bot <small>Owner-only • on-device • answers only when you ask</small></h1>
+  <div class="badge" id="guardBadge"><span class="dot off"></span>LOCKED</div>
+</header>
+
+<main>
+  <!-- LOCK / SETUP -->
+  <section class="card" id="lockScreen">
+    <h2 id="lockTitle">Unlock your Sentinel</h2>
+    <p class="desc" id="lockDesc">This bot guards <b>only your account</b> on <b>this device</b>. Nothing leaves the browser unless you explicitly enable Cloud AI. Enter your owner passphrase to unlock.</p>
+    <div id="setupBox" class="hidden">
+      <label>First run — create owner passphrase (min 8 chars)</label>
+      <input id="newPass" type="password" autocomplete="new-password" placeholder="Create passphrase…" />
+      <label>Confirm passphrase</label>
+      <input id="newPass2" type="password" autocomplete="new-password" placeholder="Confirm…" />
+      <div class="row" style="margin-top:12px">
+        <button id="btnSetup" class="ok" style="flex:1">Create &amp; Lock In 🔒</button>
+      </div>
+      <p class="kbd" style="margin-top:10px">Stored as salted SHA-256 hash in this browser's localStorage. No server, no account, no tracking.</p>
+    </div>
+    <div id="unlockBox" class="hidden">
+      <label>Owner passphrase</label>
+      <input id="pass" type="password" autocomplete="current-password" placeholder="Enter passphrase…" />
+      <div class="row" style="margin-top:12px">
+        <button id="btnUnlock" style="flex:1">Unlock</button>
+      </div>
+      <p class="kbd" id="lockMsg" style="margin-top:10px"></p>
+      <div class="row" style="margin-top:6px">
+        <button id="btnWipeLocked" class="ghost" style="flex:1;font-size:12px">Forgot? Wipe all local data</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- APP -->
+  <section id="app" class="hidden" style="display:grid;gap:16px">
+    <div class="card">
+      <div class="tabs">
+        <button data-tab="guard" class="active">🛡️ Guard</button>
+        <button data-tab="ask">💬 Ask</button>
+        <button data-tab="kb">📚 Knowledge</button>
+        <button data-tab="audit">🧾 Audit</button>
+      </div>
+    </div>
+
+    <div class="card" data-pane="guard">
+      <h2><span class="dot on"></span>Account Guard — <span id="guardState">ACTIVE</span></h2>
+      <p class="desc">Sentinel stays locked by default. It auto-locks after inactivity, records every unlock attempt, and <b>never</b> answers enquiries unless you explicitly ask in the Ask tab.</p>
+      <div class="grid2">
+        <div>
+          <label>Auto-lock after inactivity</label>
+          <select id="timeoutSel">
+            <option value="60000">1 minute</option>
+            <option value="120000" selected>2 minutes</option>
+            <option value="300000">5 minutes</option>
+            <option value="600000">10 minutes</option>
+          </select>
+          <label>Session</label>
+          <div class="row">
+            <button id="btnLock" class="ghost" style="flex:1">Lock now</button>
+            <button id="btnWipe" class="danger" style="flex:1">Wipe all data</button>
+          </div>
+          <p class="kbd" id="sessionInfo" style="margin-top:10px"></p>
+        </div>
+        <div class="stat">
+          <div><b id="sFailed">0</b><span>blocked attempts</span></div>
+          <div><b id="sQueries">0</b><span>enquiries answered</span></div>
+          <div><b id="sKb">0</b><span>knowledge entries</span></div>
+          <div><b id="sLast">—</b><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">last unlock</span></div>
+        </div>
+      </div>
+      <div style="margin-top:12px" class="row">
+        <button id="btnExport" class="ghost">Export knowledge (JSON)</button>
+        <button id="btnExportAudit" class="ghost">Export audit (JSON)</button>
+      </div>
+    </div>
+
+    <div class="card hidden" data-pane="ask">
+      <h2>Ask — on-request only</h2>
+      <p class="desc">Type an enquiry and press <b>Ask</b>. Sentinel answers from your <b>on-device knowledge base</b> + built-in guard advice. It never listens in the background. Optional Cloud AI is <b>off</b> unless you enable it below.</p>
+      <div class="chatlog" id="chatlog"><div class="msg a"><b>Sentinel:</b> Locked in and ready. Ask me anything — e.g. “how do I spot a phishing email?” or add your own answers in the Knowledge tab.</div></div>
+      <div class="row">
+        <input id="q" placeholder="Ask an enquiry… (Enter to send)" style="flex:1" />
+        <button id="btnAsk">Ask</button>
+      </div>
+      <details style="margin-top:12px">
+        <summary style="cursor:pointer;font-size:13px;color:var(--mut)">Optional: Cloud AI (BYO key — off by default)</summary>
+        <label>OpenAI-compatible endpoint (e.g. https://api.openai.com/v1/chat/completions)</label>
+        <input id="cloudUrl" placeholder="https://…" />
+        <label>API key (stored only in this browser)</label>
+        <input id="cloudKey" type="password" placeholder="sk-…" />
+        <label>Model</label>
+        <input id="cloudModel" placeholder="gpt-4o-mini" value="gpt-4o-mini" />
+        <div class="row" style="margin-top:10px">
+          <button id="btnCloudAsk" class="ghost">Ask with Cloud AI (explicit only)</button>
+        </div>
+        <p class="kbd">When you click this, only that single question is sent to the endpoint you entered. Otherwise zero network calls.</p>
+      </details>
+    </div>
+
+    <div class="card hidden" data-pane="kb">
+      <h2>Knowledge base — yours only</h2>
+      <p class="desc">Teach Sentinel canned answers. Matching is keyword-based, on-device. Example: keywords “wifi, router, password” → answer with your router steps.</p>
+      <label>Keywords (comma separated)</label>
+      <input id="kbKeys" placeholder="e.g. refund, return, policy" />
+      <label>Answer</label>
+      <textarea id="kbAns" placeholder="Type the exact answer Sentinel should give…"></textarea>
+      <div class="row" style="margin-top:10px"><button id="btnKbAdd" class="ok">Add entry</button></div>
+      <div style="margin-top:14px;overflow:auto"><table><thead><tr><th>Keywords</th><th>Answer</th><th></th></tr></thead><tbody id="kbRows"></tbody></table></div>
+    </div>
+
+    <div class="card hidden" data-pane="audit">
+      <h2>Audit log — every access recorded</h2>
+      <p class="desc">Failed unlocks, locks, questions, and wipes. Stored locally. Export any time.</p>
+      <div style="overflow:auto"><table><thead><tr><th>Time</th><th>Event</th><th>Detail</th></tr></thead><tbody id="auditRows"></tbody></table></div>
+      <div class="row" style="margin-top:10px"><button id="btnClearAudit" class="ghost">Clear audit</button></div>
+    </div>
+  </section>
+</main>
+
+<footer>Sentinel v1.0 • 100% static, no backend, no cookies, no tracking. Your passphrase hash + knowledge + audit live in <code>localStorage</code> on this device only. Reload = locked.</footer>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const LS = { cred:"sentinel.cred.v1", kb:"sentinel.kb.v1", audit:"sentinel.audit.v1", stats:"sentinel.stats.v1", cloud:"sentinel.cloud.v1", timeout:"sentinel.timeout.v1" };
+let unlocked = false, lastActivity = Date.now(), lockTimer = null;
+
+// ---------- utils ----------
+function nowStr(){ return new Date().toLocaleString(); }
+function load(k, fb){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; }catch{ return fb; } }
+function save(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+function audit(event, detail){ const a = load(LS.audit, []); a.push({t:new Date().toISOString(), event, detail:detail||""}); save(LS.audit, a.slice(-500)); renderAudit(); }
+function stats(){ return load(LS.stats, {failed:0, queries:0, last:null}); }
+function setStats(s){ save(LS.stats, s); renderStats(); }
+async function sha256hex(s){ const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""); }
+function randSalt(){ return [...crypto.getRandomValues(new Uint8Array(16))].map(x=>x.toString(16).padStart(2,"0")).join(""); }
+function esc(s){ return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+// ---------- guard ----------
+function hasCred(){ return !!localStorage.getItem(LS.cred); }
+function refreshLockUI(){
+  const setup = !hasCred();
+  $("setupBox").classList.toggle("hidden", !setup);
+  $("unlockBox").classList.toggle("hidden", setup);
+  $("lockTitle").textContent = setup ? "Set up your Sentinel" : "Unlock your Sentinel";
+  $("guardBadge").innerHTML = unlocked ? '<span class="dot on"></span>GUARDING • UNLOCKED' : '<span class="dot off"></span>LOCKED';
+  $("lockScreen").classList.toggle("hidden", unlocked);
+  $("app").classList.toggle("hidden", !unlocked);
+}
+function poke(){ lastActivity = Date.now(); scheduleLock(); }
+function scheduleLock(){
+  clearTimeout(lockTimer);
+  const ms = parseInt($("timeoutSel").value || "120000", 10);
+  lockTimer = setTimeout(()=>{ if(unlocked) lock("auto-lock after inactivity"); }, ms);
+  const s = Math.round(ms/60000*10)/10;
+  $("sessionInfo").textContent = "Auto-lock in " + (s>=1 ? s+" min" : Math.round(ms/1000)+"s") + " of inactivity. Reload locks instantly.";
+}
+function lock(reason){
+  unlocked = false; $("q").value = "";
+  audit("lock", reason||"manual");
+  refreshLockUI(); $("lockMsg").textContent = reason ? ("Locked: "+reason+".") : "";
+}
+async function setup(){
+  const a = $("newPass").value, b = $("newPass2").value;
+  if(a.length < 8){ alert("Use at least 8 characters."); return; }
+  if(a !== b){ alert("Passphrases do not match."); return; }
+  const salt = randSalt();
+  const hash = await sha256hex(salt + "::" + a);
+  save(LS.cred, {salt, hash, created:new Date().toISOString()});
+  save(LS.kb, load(LS.kb, seedKb()));
+  audit("setup", "owner passphrase created");
+  $("newPass").value = $("newPass2").value = "";
+  refreshLockUI(); $("lockMsg").textContent = "Created. Now unlock with your new passphrase.";
+}
+async function unlock(){
+  if(hasLockout()){ $("lockMsg").textContent = "Too many attempts — wait " + lockoutLeft() + "s."; return; }
+  const v = $("pass").value;
+  const c = load(LS.cred, null);
+  const h = await sha256hex(c.salt + "::" + v);
+  if(h === c.hash){
+    unlocked = true; $("pass").value = ""; clearFails();
+    const st = stats(); st.last = nowStr(); setStats(st);
+    audit("unlock", "owner unlocked");
+    loadCloud(); refreshLockUI(); poke();
+  } else {
+    const st = stats(); st.failed++; setStats(st);
+    regFail(); audit("blocked", "failed unlock attempt #" + st.failed);
+    $("lockMsg").textContent = "Wrong passphrase. Attempt " + fails().length + "/5 recorded.";
+  }
+}
+// brute-force guard: 5 fails -> 60s lockout
+function fails(){ return load("sentinel.fails.v1", []); }
+function regFail(){ const f = fails(); f.push(Date.now()); save("sentinel.fails.v1", f.slice(-10)); }
+function clearFails(){ localStorage.removeItem("sentinel.fails.v1"); }
+function hasLockout(){ const f = fails().filter(t=>Date.now()-t<60000); return f.length>=5; }
+function lockoutLeft(){ const f = fails().filter(t=>Date.now()-t<60000).sort(); if(!f.length) return 0; return Math.ceil(60-(Date.now()-f[0])/1000); }
+
+// ---------- Q&A engine (on-device) ----------
+function seedKb(){
+  return [
+    {keys:["hours","open","support"], ans:"Support hours: Mon–Fri 9:00–18:00. For urgent account issues, lock the account first, then contact support from your saved contact. — edit me in Knowledge tab."},
+    {keys:["refund","return"], ans:"Refund policy template: 14-day returns for unused items with receipt. Edit this answer in the Knowledge tab to match your real policy."},
+    {keys:["phishing","scam","suspicious"], ans:"Phishing check: 1) Verify sender domain 2) Hover links before clicking 3) Never enter your passphrase elsewhere 4) Enable 2FA 5) Report + delete. When in doubt, lock first."}
+  ];
+}
+function builtin(q){
+  const t = q.toLowerCase();
+  const has = (...ws)=>ws.some(w=>t.includes(w));
+  if(has("hello","hi","hey","yo")) return "Hello, owner. Guard is active. What enquiry should I answer?";
+  if(has("who are you","your name","what are you")) return "I'm Sentinel — your personal on-device guard bot. I protect this account on this device and answer enquiries only when you ask. I store nothing in the cloud.";
+  if(has("help","what can you do","commands")) return "I can: 1) Keep this session guarded + auto-locked 2) Answer from your Knowledge tab 3) Give account-safety advice (ask: phishing / password / 2fa) 4) Keep an audit log. Try “time”, “password tip”, or teach me in Knowledge.";
+  if(has("time")) return "Current device time: " + new Date().toLocaleTimeString() + ".";
+  if(has("date","today","day")) return "Today is " + new Date().toLocaleDateString(undefined,{weekday:"long",year:"numeric",month:"long",day:"numeric"}) + ".";
+  if(has("password","passphrase")) return "Password tip: use a unique 16+ char passphrase per account, stored in a password manager, with 2FA on. Never share your Sentinel passphrase — Sentinel will never ask for it outside this unlock screen.";
+  if(has("2fa","two-factor","authenticator")) return "2FA tip: prefer an authenticator app or hardware key over SMS. Store backup codes offline. Turn on login alerts where available.";
+  if(has("phishing","scam","hack","breach","suspicious")) return "If you suspect a breach: 1) Lock Sentinel + change the affected password from a known-good link 2) Revoke unknown sessions 3) Check 2FA 4) Scan for forwarding rules 5) Log it in the audit. Ask me “lock” to lock now.";
+  if(has("lock")) return "To lock now, press “Lock now” in the Guard tab — or just close/reload this page. I auto-lock after inactivity.";
+  if(has("wipe","delete all","reset")) return "To wipe: Guard tab → “Wipe all data”. This erases passphrase hash, knowledge and audit from this browser. There is no cloud copy.";
+  return null;
+}
+function answerLocal(q){
+  const kb = load(LS.kb, []);
+  const t = q.toLowerCase();
+  let best = null, bestScore = 0;
+  for(const e of kb){
+    let score = 0;
+    for(const k of e.keys){ if(k && t.includes(k.toLowerCase().trim())) score += k.trim().length; }
+    if(score > bestScore){ bestScore = score; best = e; }
+  }
+  if(best && bestScore > 0) return best.ans;
+  const b = builtin(q);
+  if(b) return b;
+  return "I'm in private guard mode, so I only answer from your on-device knowledge. No match found for that. Add it in the Knowledge tab (keywords + answer), then ask again.";
+}
+function pushMsg(who, text){
+  const d = document.createElement("div");
+  d.className = "msg " + (who === "you" ? "q" : "a");
+  d.innerHTML = who === "you" ? esc(text) : "<b>Sentinel:</b> " + esc(text);
+  $("chatlog").appendChild(d); $("chatlog").scrollTop = 1e9;
+}
+function ask(){
+  if(!unlocked) return;
+  const q = $("q").value.trim(); if(!q) return;
+  pushMsg("you", q); $("q").value = "";
+  const a = answerLocal(q);
+  pushMsg("bot", a);
+  const st = stats(); st.queries++; setStats(st);
+  audit("query", q.slice(0,120));
+  poke();
+}
+async function askCloud(){
+  if(!unlocked) return;
+  const q = $("q").value.trim() || "Summarize account-safety best practices in 5 bullets.";
+  const url = $("cloudUrl").value.trim(), key = $("cloudKey").value.trim(), model = $("cloudModel").value.trim() || "gpt-4o-mini";
+  if(!url || !key){ alert("Enter endpoint + API key first. This is optional and off by default."); return; }
+  save(LS.cloud, {url, key, model});
+  pushMsg("you", q + "  [via cloud — explicit]");
+  pushMsg("bot", "Contacting your chosen endpoint for this one question only…");
+  try{
+    const r = await fetch(url, {method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+      body: JSON.stringify({model, messages:[{role:"system",content:"You are Sentinel, a concise personal account-guard assistant. Prioritize safety, privacy, short answers."},{role:"user",content:q}]})});
+    const j = await r.json();
+    const txt = j.choices?.[0]?.message?.content || JSON.stringify(j).slice(0,500);
+    pushMsg("bot", txt);
+    audit("cloud-query", q.slice(0,120));
+  }catch(e){ pushMsg("bot", "Cloud request failed: " + e.message + ". Local mode still works."); }
+  poke();
+}
+
+// ---------- knowledge / audit render ----------
+function renderKb(){
+  const kb = load(LS.kb, []);
+  $("kbRows").innerHTML = kb.map((e,i)=>"<tr><td>"+esc(e.keys.join(", "))+"</td><td>"+esc(e.ans)+"</td><td><button class='ghost' data-del='"+i+"'>Delete</button></td></tr>").join("") || "<tr><td colspan='3' style='color:var(--mut)'>No entries yet.</td></tr>";
+  document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ const k=load(LS.kb,[]); k.splice(+b.dataset.del,1); save(LS.kb,k); renderKb(); renderStats(); audit("kb-delete","entry removed"); });
+  renderStats();
+}
+function renderAudit(){
+  const a = load(LS.audit, []).slice().reverse().slice(0,200);
+  $("auditRows").innerHTML = a.map(e=>{ const bad = /blocked|wipe/.test(e.event); return "<tr><td>"+esc(new Date(e.t).toLocaleString())+"</td><td><span class='pill "+(bad?"bad":"good")+"'>"+esc(e.event)+"</span></td><td>"+esc(e.detail)+"</td></tr>"; }).join("") || "<tr><td colspan='3' style='color:var(--mut)'>No events yet.</td></tr>";
+}
+function renderStats(){
+  const st = stats(), kb = load(LS.kb, []);
+  $("sFailed").textContent = st.failed; $("sQueries").textContent = st.queries;
+  $("sKb").textContent = kb.length; $("sLast").textContent = st.last || "—";
+}
+function loadCloud(){ const c = load(LS.cloud, null); if(c){ $("cloudUrl").value=c.url||""; $("cloudKey").value=c.key||""; $("cloudModel").value=c.model||"gpt-4o-mini"; } }
+
+// ---------- events ----------
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  document.querySelectorAll("[data-pane]").forEach(p=>p.classList.toggle("hidden", p.dataset.pane!==b.dataset.tab));
+  poke();
+});
+$("btnSetup").onclick = setup;
+$("btnUnlock").onclick = unlock;
+$("pass").addEventListener("keydown", e=>{ if(e.key==="Enter") unlock(); });
+$("newPass2").addEventListener("keydown", e=>{ if(e.key==="Enter") setup(); });
+$("btnLock").onclick = ()=>lock("manual lock");
+$("btnAsk").onclick = ask;
+$("q").addEventListener("keydown", e=>{ if(e.key==="Enter") ask(); });
+$("q").addEventListener("input", poke);
+$("btnCloudAsk").onclick = askCloud;
+$("btnKbAdd").onclick = ()=>{
+  const keys = $("kbKeys").value.split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const ans = $("kbAns").value.trim();
+  if(!keys.length || !ans){ alert("Add keywords + answer."); return; }
+  const kb = load(LS.kb, []); kb.push({keys, ans}); save(LS.kb, kb);
+  $("kbKeys").value = $("kbAns").value = "";
+  renderKb(); audit("kb-add", keys.join(", ")); poke();
+};
+$("btnClearAudit").onclick = ()=>{ save(LS.audit, []); renderAudit(); };
+$("btnWipe").onclick = ()=>{
+  if(!confirm("Wipe ALL Sentinel data on this device (passphrase, knowledge, audit)?")) return;
+  Object.values(LS).forEach(k=>localStorage.removeItem(k));
+  localStorage.removeItem("sentinel.fails.v1");
+  location.reload();
+};
+$("btnWipeLocked").onclick = ()=>{
+  if(!confirm("Wipe ALL Sentinel data on this device?")) return;
+  Object.values(LS).forEach(k=>localStorage.removeItem(k));
+  localStorage.removeItem("sentinel.fails.v1");
+  location.reload();
+};
+$("btnExport").onclick = ()=>{
+  const blob = new Blob([JSON.stringify(load(LS.kb,[]),null,2)],{type:"application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "sentinel-knowledge.json"; a.click();
+};
+$("btnExportAudit").onclick = ()=>{
+  const blob = new Blob([JSON.stringify(load(LS.audit,[]),null,2)],{type:"application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "sentinel-audit.json"; a.click();
+};
+$("timeoutSel").onchange = ()=>{ save(LS.timeout, $("timeoutSel").value); poke(); };
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden && unlocked) audit("background", "tab hidden (still unlocked until timer)"); });
+["click","keydown"].forEach(ev=>document.addEventListener(ev, ()=>{ if(unlocked) poke(); }, {passive:true}));
+
+// init
+$("timeoutSel").value = load(LS.timeout, "120000");
+refreshLockUI(); renderKb(); renderAudit(); renderStats(); scheduleLock();
+</script>
+</body>
+</html>
